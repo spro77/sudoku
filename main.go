@@ -28,14 +28,12 @@ func main() {
 	for _, c := range cols {
 		unitlist = append(unitlist, cross(rows, []string{c}))
 	}
-
 	for _, r := range rows {
 		unitlist = append(unitlist, cross([]string{r}, cols))
 	}
 
 	rrows := [][]string{{"A", "B", "C"}, {"D", "E", "F"}, {"G", "H", "I"}}
 	ccols := [][]string{{"1", "2", "3"}, {"4", "5", "6"}, {"7", "8", "9"}}
-
 	for _, rs := range rrows {
 		for _, cs := range ccols {
 			unitlist = append(unitlist, cross(rs, cs))
@@ -45,9 +43,7 @@ func main() {
 	//___________________________________
 
 	for _, s := range squares {
-
 		units[s] = [][]string{}
-
 		for _, u := range unitlist {
 			if member(s, u) {
 				units[s] = append(units[s], u)
@@ -58,11 +54,9 @@ func main() {
 	//___________________________________
 
 	for _, s := range squares {
-
 		set := []string{}
-
-		for _, unit := range units[s] {
-			for _, square := range unit {
+		for _, u := range units[s] {
+			for _, square := range u {
 				if square != s {
 					set = append(set, square)
 				}
@@ -141,9 +135,65 @@ func parseGrid(grid string) map[string]string {
 	return values
 }
 
-//___________________________________ Me
+//___________________________________ It updates the incoming values by eliminating the other values than d
 
-func assign(values map[string]string, s string, d string) map[string]string {
+func assign(values map[string]string, s string, d string) bool {
 	nassigns++
-	return values
+
+	otherValues := strings.Replace(s, d, "", 1)
+	for _, d2 := range otherValues {
+		if !eliminate(values, s, string(d2)) {
+			return false
+		}
+	}
+	return true
+}
+
+/*
+1. It removes the given value d from values[s] which is a list of potential values for s.
+2. If there is no values left in s (that is we don’t have any potential value for that square), returns False
+3. When there is only one potential value for s, it removes the value from all the peers of s	<== strategy (1)
+4. Make sure the given value d has a place elsewhere (i.e., if no square has d as a potential value, we can not solve the puzzle)
+5. Where there is only one place for the value d, remove it from the peers	<== strategy (2)
+*/
+
+func eliminate(values map[string]string, s string, d string) bool {
+	neliminations++
+
+	if strings.Contains(values[s], d) {
+		return true // Already eliminated
+	}
+	values[s] = strings.Replace(values[s], d, "", 1)
+
+	// <== strategy (1)
+	if len(values[s]) == 0 {
+		return false // Contradiction: removed last value
+	} else if len(values[s]) == 1 {
+		d2 := values[s]
+		for _, s2 := range peers[s] {
+			if !eliminate(values, s2, d2) {
+				return false
+			}
+		}
+	}
+
+	// <== strategy (2)
+	for u := range units[s] {
+		dplaces := []string{}
+		for i := range units[s][u] {
+			sq2 := units[s][u][i]
+			if strings.Contains(values[sq2], d) {
+				dplaces = append(dplaces, sq2)
+			}
+		}
+		if len(dplaces) == 0 {
+			return false
+		} else if len(dplaces) == 1 {
+			if !assign(values, dplaces[0], d) {
+				return false
+			}
+		}
+	}
+
+	return true
 }
