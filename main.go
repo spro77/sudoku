@@ -1,27 +1,8 @@
 package main
 
 import (
-	"fmt"
+	"strings"
 )
-
-func cross(A []string, B []string) []string {
-	var C []string
-	for _, a := range A {
-		for _, b := range B {
-			C = append(C, (a + b))
-		}
-	}
-	return C
-}
-
-func member(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
-}
 
 var (
 	examp  = "4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......"
@@ -92,15 +73,38 @@ func main() {
 
 	//___________________________________
 
-	fmt.Println(parseGrid(examp))
-
 	//fmt.Println("All cell peers", peers["I9"])
 	//fmt.Println("All cell units", units["C2"])
 	//fmt.Printf("len=%d cap=%d %v\n", len(squares), cap(squares), squares)
 
 }
 
-func parseGrid(grid string) map[string]string {
+//___________________________________ Service method for strings concatenating
+
+func cross(A []string, B []string) []string {
+	var C []string
+	for _, a := range A {
+		for _, b := range B {
+			C = append(C, (a + b))
+		}
+	}
+	return C
+}
+
+//___________________________________ Service method for checking is there a string in the list
+
+func member(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
+//___________________________________ Method for Storing an initial representation of Sudoku into a map using square as key
+
+func mapValue(grid string) map[string]string {
 	symbols := digits + ".0"
 	gridChars := []string{}
 	m := make(map[string]string)
@@ -116,6 +120,30 @@ func parseGrid(grid string) map[string]string {
 	for i := 0; i < len(gridChars); i++ {
 		m[squares[i]] = gridChars[i]
 	}
-
 	return m
+}
+
+//___________________________________ Method leaves only possible values for each square
+
+func parseGrid(grid string) map[string]string {
+	initValues := mapValue(grid)
+	values := make(map[string]string)
+
+	for _, s := range squares {
+		values[s] = digits // Initial value in a map where each square is used as a key
+	}
+
+	for _, s := range squares {
+		if strings.Contains(digits, initValues[s]) {
+			assign(values, s, initValues[s])
+		}
+	}
+	return values
+}
+
+//___________________________________ Me
+
+func assign(values map[string]string, s string, d string) map[string]string {
+	nassigns++
+	return values
 }
