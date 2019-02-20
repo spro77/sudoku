@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -67,10 +68,11 @@ func main() {
 
 	//___________________________________
 
-	//fmt.Println("All cell peers", peers["I9"])
-	//fmt.Println("All cell units", units["C2"])
+	display(parseGrid(examp))
 	//fmt.Printf("len=%d cap=%d %v\n", len(squares), cap(squares), squares)
-
+	//fmt.Println(parseGrid(examp))
+	//fmt.Println("nassigns", nassigns)
+	//fmt.Println("neliminations", neliminations)
 }
 
 //___________________________________ Service method for strings concatenating
@@ -139,11 +141,11 @@ func parseGrid(grid string) map[string]string {
 
 func assign(values map[string]string, s string, d string) bool {
 	nassigns++
-
-	otherValues := strings.Replace(s, d, "", 1)
-	for _, d2 := range otherValues {
-		if !eliminate(values, s, string(d2)) {
-			return false
+	for _, d2 := range values[s] {
+		if string(d2) != d {
+			if status, _ := eliminate(values, s, string(d2)); !status {
+				return false
+			}
 		}
 	}
 	return true
@@ -157,22 +159,23 @@ func assign(values map[string]string, s string, d string) bool {
 5. Where there is only one place for the value d, remove it from the peers	<== strategy (2)
 */
 
-func eliminate(values map[string]string, s string, d string) bool {
+func eliminate(values map[string]string, s string, d string) (bool, map[string]string) {
 	neliminations++
 
-	if strings.Contains(values[s], d) {
-		return true // Already eliminated
+	if !strings.Contains(values[s], d) {
+		return true, values
 	}
+
 	values[s] = strings.Replace(values[s], d, "", 1)
 
 	// <== strategy (1)
 	if len(values[s]) == 0 {
-		return false // Contradiction: removed last value
+		return false, values
 	} else if len(values[s]) == 1 {
 		d2 := values[s]
 		for _, s2 := range peers[s] {
-			if !eliminate(values, s2, d2) {
-				return false
+			if status, _ := eliminate(values, s2, d2); !status {
+				return false, values
 			}
 		}
 	}
@@ -187,13 +190,25 @@ func eliminate(values map[string]string, s string, d string) bool {
 			}
 		}
 		if len(dplaces) == 0 {
-			return false
+			return false, values
 		} else if len(dplaces) == 1 {
 			if !assign(values, dplaces[0], d) {
-				return false
+				return false, values
 			}
 		}
 	}
+	return true, values
+}
 
-	return true
+func display(values map[string]string) {
+
+	for _, r := range rows {
+		ind := ""
+		for _, c := range cols {
+			ind = r + c
+			fmt.Print(values[ind] + "  ")
+		}
+		fmt.Println("")
+	}
+
 }
