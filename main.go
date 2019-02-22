@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -18,6 +21,12 @@ var (
 	peers = map[string][]string{} // Peers, dependent squares (Value) per Square (Key)
 
 )
+
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
 
 func main() {
 
@@ -59,8 +68,42 @@ func main() {
 		peers[s] = set
 	}
 
-	display(solve(examp))
+	//___________________________________ User Prompting
 
+	fmt.Println("From where do you want to input Sudoku initials?")
+	fmt.Println("1: from file ( pls use data.txt )")
+	fmt.Println("2: from prompt line")
+	fmt.Println("3: from hardcoded example ( the most difficult example )")
+
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Your answer: ")
+	char, _, err := reader.ReadRune()
+	//text, err := reader.ReadString('\n')
+	check(err)
+
+	switch string(char) {
+	case "1":
+		buffer, err := ioutil.ReadFile("/Users/prostovsergey/go/sudoku/data.txt")
+		check(err)
+		display(solve(string(string(buffer))))
+		fmt.Print("1 done")
+	case "2":
+		inputPrompt()
+		fmt.Print("2 done")
+	case "3":
+		display(solve(string(examp)))
+		fmt.Print("3 done")
+	default:
+		fmt.Print("def done")
+	}
+}
+
+func inputPrompt() {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("Input you Sudoku initial, use any symbol as empty square")
+	text, _ := reader.ReadString('\n')
+	text = strings.Replace(text, "\n", "", -1)
+	display(solve(text))
 }
 
 //___________________________________ Service method for strings concatenating
@@ -114,7 +157,7 @@ func display(values map[string]string) {
 
 func mapValue(grid string) map[string]string {
 
-	symbols := digits + ".0"
+	symbols := digits + ".0_+=,;/:\n "
 	gridChars := []string{}
 	m := make(map[string]string)
 
@@ -151,7 +194,7 @@ func parseGrid(grid string) map[string]string {
 	return values
 }
 
-//___________________________________ It updates the incoming values by eliminating the other values than d
+//___________________________________ It updataes the incoming values by eliminating the other values than d
 
 func assign(values map[string]string, s string, d string) (bool, map[string]string) {
 
