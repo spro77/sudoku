@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	examp  = "4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......"
+	examp  = ".....6....59.....82....8....45........3........6..3.54...325..6.................."
 	rows   = []string{"A", "B", "C", "D", "E", "F", "G", "H", "I"}
 	cols   = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}
 	digits = "123456789"
@@ -17,9 +17,6 @@ var (
 
 	peers = map[string][]string{} // Peers, dependent squares (Value) per Square (Key)
 
-	nassigns      = 0
-	neliminations = 0
-	nsearches     = 0
 )
 
 func main() {
@@ -41,8 +38,6 @@ func main() {
 		}
 	}
 
-	//___________________________________
-
 	for _, s := range squares {
 		units[s] = [][]string{}
 		for _, u := range unitlist {
@@ -51,8 +46,6 @@ func main() {
 			}
 		}
 	}
-
-	//___________________________________
 
 	for _, s := range squares {
 		set := []string{}
@@ -66,13 +59,8 @@ func main() {
 		peers[s] = set
 	}
 
-	//___________________________________
+	display(solve(examp))
 
-	display(parseGrid(examp))
-	//fmt.Printf("len=%d cap=%d %v\n", len(squares), cap(squares), squares)
-	//fmt.Println(parseGrid(examp))
-	//fmt.Println("nassigns", nassigns)
-	//fmt.Println("neliminations", neliminations)
 }
 
 //___________________________________ Service method for strings concatenating
@@ -98,9 +86,34 @@ func member(a string, list []string) bool {
 	return false
 }
 
+//___________________________________ Service method for Map duplicating
+
+func dup(values map[string]string) map[string]string {
+	newMap := make(map[string]string)
+	for k, v := range values {
+		newMap[k] = v
+	}
+	return newMap
+}
+
+//___________________________________ Vizualizing method
+
+func display(values map[string]string) {
+
+	for _, r := range rows {
+		ind := ""
+		for _, c := range cols {
+			ind = r + c
+			fmt.Print(values[ind] + "  ")
+		}
+		fmt.Println("")
+	}
+}
+
 //___________________________________ Method for Storing an initial representation of Sudoku into a map using square as key
 
 func mapValue(grid string) map[string]string {
+
 	symbols := digits + ".0"
 	gridChars := []string{}
 	m := make(map[string]string)
@@ -122,6 +135,7 @@ func mapValue(grid string) map[string]string {
 //___________________________________ Method leaves only possible values for each square
 
 func parseGrid(grid string) map[string]string {
+
 	initValues := mapValue(grid)
 	values := make(map[string]string)
 
@@ -139,16 +153,16 @@ func parseGrid(grid string) map[string]string {
 
 //___________________________________ It updates the incoming values by eliminating the other values than d
 
-func assign(values map[string]string, s string, d string) bool {
-	nassigns++
+func assign(values map[string]string, s string, d string) (bool, map[string]string) {
+
 	for _, d2 := range values[s] {
 		if string(d2) != d {
 			if status, _ := eliminate(values, s, string(d2)); !status {
-				return false
+				return false, values
 			}
 		}
 	}
-	return true
+	return true, values
 }
 
 /*
@@ -160,7 +174,6 @@ func assign(values map[string]string, s string, d string) bool {
 */
 
 func eliminate(values map[string]string, s string, d string) (bool, map[string]string) {
-	neliminations++
 
 	if !strings.Contains(values[s], d) {
 		return true, values
@@ -174,8 +187,10 @@ func eliminate(values map[string]string, s string, d string) (bool, map[string]s
 	} else if len(values[s]) == 1 {
 		d2 := values[s]
 		for _, s2 := range peers[s] {
-			if status, _ := eliminate(values, s2, d2); !status {
-				return false, values
+			if len(values[s2]) > 1 {
+				if status, _ := eliminate(values, s2, d2); !status {
+					return false, values
+				}
 			}
 		}
 	}
@@ -192,23 +207,50 @@ func eliminate(values map[string]string, s string, d string) (bool, map[string]s
 		if len(dplaces) == 0 {
 			return false, values
 		} else if len(dplaces) == 1 {
-			if !assign(values, dplaces[0], d) {
+			if status, _ := assign(values, dplaces[0], d); !status {
 				return false, values
 			}
 		}
 	}
+
 	return true, values
 }
 
-func display(values map[string]string) {
+//___________________________________ Main iterator systematically try all possibilities until we hit one that works
 
-	for _, r := range rows {
-		ind := ""
-		for _, c := range cols {
-			ind = r + c
-			fmt.Print(values[ind] + "  ")
+func search(values map[string]string) (bool, map[string]string) {
+
+	max, min, sq := 1, 9, ""
+
+	for _, s := range squares {
+
+		if len(values[s]) > max {
+			max = len(values[s])
 		}
-		fmt.Println("")
+		if len(values[s]) > 1 && len(values[s]) < min {
+			min = len(values[s])
+			sq = s
+		}
 	}
 
+	if max == 1 {
+		return true, values // Sudoku Solved!
+	}
+
+	for _, d := range values[sq] { // Select a square with minimum of potential values, and iterate...
+		_, result := assign(dup(values), sq, string(d))
+		status, values := search(result)
+		if status {
+			return status, values
+		}
+	}
+	return false, values
+}
+
+func solve(grid string) map[string]string {
+	status, result := search(parseGrid(grid))
+	if status {
+		return result
+	}
+	return map[string]string{}
 }
