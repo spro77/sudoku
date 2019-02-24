@@ -86,21 +86,17 @@ func main() {
 		buffer, err := ioutil.ReadFile("/Users/prostovsergey/go/sudoku/data.txt")
 		check(err)
 		display(solve(string(string(buffer))))
-		fmt.Print("1 done")
 	case "2":
 		inputPrompt()
-		fmt.Print("2 done")
 	case "3":
 		display(solve(string(examp)))
-		fmt.Print("3 done")
 	default:
-		fmt.Print("def done")
 	}
 }
 
 func inputPrompt() {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("Input you Sudoku initial, use any symbol as empty square")
+	fmt.Println("Input you Sudoku initial, use any symbol for empty square")
 	text, _ := reader.ReadString('\n')
 	text = strings.Replace(text, "\n", "", -1)
 	display(solve(text))
